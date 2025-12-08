@@ -24,55 +24,64 @@ const client = new Client({
     ],
 });
 
-let latestTweetId = load();
+let latestTweetTime = load();
 
 client.once("ready", () => {
     console.log("woke up");
 
     cron.schedule("* * * * *", async () => {
-        try {
-            const feed = await parser.parseURL(RSS_URL);
-            const items = feed.items;
+        const feed = await parser.parseURL(RSS_URL);
+        const items = feed.items;
 
-            if (!latestTweetId && items.length > 0) {
-                latestTweetId = items[0].link || items[0].guid;
+        if(items.length == 0) {
+            return;
+        }
 
-                save(latestTweetId);
+        if (!latestTweetTime) {
+            const item = items[0];
 
-                return;
+            const channel = await client.channels.fetch(CHANNEL_ID);
+
+            if(channel?.isTextBased()) {
+                const sentMessage = await channel.send(`New tweet from ${feed.title}:\n${item.link}`);
+                await sentMessage.react("🔔");
+
+                latestTweetTime = item.isoDate || item.pubDate;
+                save(latestTweetTime);
             }
 
-            for (const item of items.reverse()) {
-                const tweetId = item.link || item.guid;
+            return;
+        }
 
-                if (!tweetId || tweetId == latestTweetId) {
-                    continue;
-                }
+        items.sort((item1, item2) => new Date(item1.isoDate) - new Date(item2.isoDate));
 
-                const channel = await client.channels.fetch(CHANNEL_ID);
+        for (const item of items) {
+            const tweetTime = item.isoDate || item.pubDate;
 
-                if (channel?.isTextBased()) {
-                    const sentMessage = await channel.send(`New tweet from ${feed.title}:\n${item.link}`);
-                    await sentMessage.react("🔔");
-
-                    latestTweetId = tweetId;
-
-                    save(latestTweetId);
-                }
+            if (!tweetTime || new Date(tweetTime) <= new Date(latestTweetTime)) {
+                continue;
             }
-        } catch (error) {
-            console.error(error);
+
+            const channel = await client.channels.fetch(CHANNEL_ID);
+
+            if (channel?.isTextBased()) {
+                const sentMessage = await channel.send(`New tweet from ${feed.title}:\n${item.link}`);
+                await sentMessage.react("🔔");
+
+                latestTweetTime = tweetTime;
+                save(latestTweetTime);
+            }
         }
     });
 });
 
-client.on("messageCreate", (message) => {
+client.on("messageCreate", async (message) => {
     if (message.author.bot) {
         return;
     }
     
     if (message.content.toLowerCase().includes("mhn")) {
-        message.reply("mhn");
+        await message.reply("mhn");
 
         // await message.react("🏓");
     }
@@ -88,8 +97,10 @@ app.get("/", (req, res) => {
 
 app.listen(PORT, () => {
     console.log("Starting Server on port " + PORT + ".");
-});function save(latestTweetID) {
-    const obj = { latestTweetId: latestTweetID };
+});
+
+function save(latestTweetTime) {
+    const obj = { latestTweetTime: latestTweetTime };
 
     fs.writeFileSync(DATA_FILE, JSON.stringify(obj), "utf-8");
 }
@@ -98,7 +109,7 @@ function load() {
         const data = fs.readFileSync(DATA_FILE, "utf-8");
         const obj = JSON.parse(data);
 
-        return obj.latestTweetId || null;
+        return obj.latestTweetTime || null;
     } catch (error) {
         return null;
     }
