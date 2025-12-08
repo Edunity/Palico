@@ -1,4 +1,5 @@
 import { Client, GatewayIntentBits } from "discord.js";
+import dotenv from "dotenv";
 import express from "express";
 import fs from "fs";
 import path from "path";
@@ -15,6 +16,8 @@ const DATA_FILE = path.join(process.cwd(), "latestTweet.json");
 const RSS_URL = "https://rss.app/feeds/qmM60oCprvFwVxMS.xml";
 const CHANNEL_ID = "1447457660973617305";
 
+dotenv.config();
+
 const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,           
@@ -26,12 +29,20 @@ const client = new Client({
 
 let latestTweetTime = load();
 
+client.login(process.env.DISCORD_TOKEN).catch(error => {
+    console.error(error);
+    
+    process.exit(1);
+});
+
 client.once("ready", () => {
     console.log("woke up");
 
     cron.schedule("* * * * *", async () => {
         const feed = await parser.parseURL(RSS_URL);
         const items = feed.items;
+
+        console.log(items.length + "のツイートを取得");
 
         if(items.length == 0) {
             return;
