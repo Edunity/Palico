@@ -14,7 +14,7 @@ const RSS_URL = "https://rss.app/feeds/qmM60oCprvFwVxMS.xml";
 const CHANNEL_ID = "1447457660973617305";
 
 // 過去に送信したツイートIDを保存して重複送信を防ぐ
-const sentTweets = new Set<string>();
+const sentTweets = new Set();
 
 // 定期実行（例: 1分ごと）
 cron.schedule("* * * * *", async () => {
@@ -24,10 +24,13 @@ cron.schedule("* * * * *", async () => {
         for (const item of feed.items) {
             // RSSのIDまたはリンクで一意性を判断
             const tweetId = item.link || item.guid;
-            if (!tweetId || sentTweets.has(tweetId)) continue;
+            if (!tweetId || sentTweets.has(tweetId)) {
+                continue;
+            }
 
             // チャンネル取得
             const channel = await client.channels.fetch(CHANNEL_ID);
+
             if (channel?.isTextBased()) {
                 await channel.send(`New tweet from ${feed.title}:\n${item.link}`);
                 console.log("Sent tweet:", item.link);
@@ -42,7 +45,7 @@ cron.schedule("* * * * *", async () => {
             }
         }
     } catch (error) {
-        console.error("Failed to fetch RSS feed:", error);
+        console.error(error);
     }
 });
 
@@ -77,39 +80,39 @@ client.on("messageCreate", (message) => {
         return;
     }
     
-    if (message.content.toLowerCase() === "ping") {
-        message.reply("pong");
+    if (message.content.toLowerCase().includes("mhn")) {
+        message.reply("mhn");
 
-        // console.log(message.author.tag + " used the ping command");
+        // await message.react("🏓");
     }
 });
 
 // プロセス終了時の処理
 process.on("SIGINT", () => {
-    // console.log("Shutting down the bot...");
-
     client.destroy();
     process.exit(0);
 });
 
 // エラーハンドリング
 client.on("error", (error) => {
-    console.error("Discord client error:", error);
+    console.error(error);
 });
 
 // Discord にログイン
 if (!process.env.DISCORD_TOKEN) {
-    console.error("DISCORD_TOKEN is not set in the .env file");
+    console.log("DISCORD_TOKEN is not set in the .env file");
 
     process.exit(1);
 }
 
-console.log("Connecting to Discord...");
-
 client.login(process.env.DISCORD_TOKEN).catch(error => {
-    console.error("Failed to log in:", error);
+    console.error(error);
 
     process.exit(1);
+});
+
+client.on("error", (error) => {
+    console.error(error);
 });
 
 app.get("/", (req, res) => {
