@@ -14,7 +14,7 @@ const PORT = process.env.PORT || 3000;
 const DATA_FILE = path.join(process.cwd(), "latestTweet.json");
 
 const RSS_URL = "https://rss.app/feeds/qmM60oCprvFwVxMS.xml";
-const CHANNEL_ID = "1447457660973617305";
+const CHANNEL_ID = "1447311397032825014";
 
 dotenv.config();
 
@@ -36,13 +36,13 @@ client.login(process.env.DISCORD_TOKEN).catch(error => {
 });
 
 client.once("ready", () => {
-    console.log("woke up");
+    console.log("Palico woke up.");
 
     cron.schedule("* * * * *", async () => {
         const feed = await parser.parseURL(RSS_URL);
         const items = feed.items;
 
-        console.log(items.length + "のツイートを取得");
+        console.log(items.length + "tweets recieved.");
 
         if(items.length == 0) {
             return;
@@ -98,8 +98,8 @@ client.on("messageCreate", async (message) => {
     }
 });
 
-app.get("/", (req, res) => {
-    res.json({
+app.get("/", (request, response) => {
+    response.json({
         status: "Bot is running",
         uptime: process.uptime(),
         timestamp: new Date().toISOString()
