@@ -32,7 +32,7 @@ client.login(process.env.DISCORD_TOKEN).catch(error => {
 });
 
 client.once("ready", () => {
-    console.log("Palico woke up.");
+    console.log("Woke up.");
 
     cron.schedule("* * * * *", async () => {
         const feed = await parser.parseURL(RSS_URL);
