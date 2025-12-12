@@ -92,7 +92,7 @@ client.on("messageCreate", async (message) => {
     }
     
     if (message.content.toLowerCase().includes("mhn")) {
-        await message.reply("mhn");
+        // await message.reply("mhn");
 
         // await message.react("🏓");
     }
