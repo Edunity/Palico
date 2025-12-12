@@ -1,8 +1,6 @@
 import { Client, GatewayIntentBits } from "discord.js";
 import dotenv from "dotenv";
 import express from "express";
-import fs from "fs";
-import path from "path";
 import RSSParser from "rss-parser";
 import cron from "node-cron";
 
@@ -10,8 +8,6 @@ const app = express();
 const parser = new RSSParser();
 
 const PORT = process.env.PORT || 3000;
-
-const DATA_FILE = path.join(process.cwd(), "latestTweet.json");
 
 const RSS_URL = "https://rss.app/feeds/qmM60oCprvFwVxMS.xml";
 const CHANNEL_ID = "1447311397032825014";
@@ -27,7 +23,7 @@ const client = new Client({
     ],
 });
 
-let latestTweetTime = load();
+let latestTweetTime = null;
 
 client.login(process.env.DISCORD_TOKEN).catch(error => {
     console.error(error);
@@ -58,7 +54,6 @@ client.once("ready", () => {
                 await sentMessage.react("🔔");
 
                 latestTweetTime = item.isoDate || item.pubDate;
-                save(latestTweetTime);
             }
 
             return;
@@ -80,7 +75,6 @@ client.once("ready", () => {
                 await sentMessage.react("🔔");
 
                 latestTweetTime = tweetTime;
-                save(latestTweetTime);
             }
         }
     });
@@ -109,19 +103,3 @@ app.get("/", (request, response) => {
 app.listen(PORT, () => {
     console.log("Starting Server on port " + PORT + ".");
 });
-
-function save(latestTweetTime) {
-    const obj = { latestTweetTime: latestTweetTime };
-
-    fs.writeFileSync(DATA_FILE, JSON.stringify(obj), "utf-8");
-}
-function load() {
-    try {
-        const data = fs.readFileSync(DATA_FILE, "utf-8");
-        const obj = JSON.parse(data);
-
-        return obj.latestTweetTime || null;
-    } catch (error) {
-        return null;
-    }
-}
