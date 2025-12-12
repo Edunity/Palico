@@ -44,6 +44,8 @@ client.once("ready", () => {
             if(items.length == 0) {
                 return;
             }
+
+            items.sort((item1, item2) => new Date(item1.isoDate) - new Date(item2.isoDate));
     
             if (!latestTweetTime) {
                 const item = items[0];
@@ -59,8 +61,6 @@ client.once("ready", () => {
     
                 return;
             }
-    
-            items.sort((item1, item2) => new Date(item1.isoDate) - new Date(item2.isoDate));
     
             for (const item of items) {
                 const tweetTime = item.isoDate || item.pubDate;
