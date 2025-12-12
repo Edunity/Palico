@@ -81,14 +81,19 @@ client.once("ready", () => {
 });
 
 client.on("messageCreate", async (message) => {
-    if (message.author.bot) {
-        return;
-    }
+    try {
+        if (message.author.bot) {
+            return;
+        }
+        
+        if (message.content.toLowerCase().includes("mhn")) {
+            // await message.reply("mhn");
     
-    if (message.content.toLowerCase().includes("mhn")) {
-        // await message.reply("mhn");
-
-        // await message.react("🏓");
+            // await message.react("🏓");
+        }
+    }
+    catch (error) {
+        console.error(error);
     }
 });
 
