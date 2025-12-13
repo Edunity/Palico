@@ -23,7 +23,7 @@ const client = new Client({
     ],
 });
 
-let latestTweetTime = null;
+let latestTime = new Date();
 
 client.login(process.env.DISCORD_TOKEN).catch(error => {
     console.error(error);
@@ -46,7 +46,7 @@ client.once("ready", () => {
             const newItems = items.filter(item => {
                 const time = item.isoDate || item.pubDate;
                 
-                return (time && (!latestTweetTime || new Date(time) > new Date(latestTweetTime)));
+                return (time && new Date(time) > latestTime);
             });
     
             if (newItems.length == 0) {
@@ -62,15 +62,12 @@ client.once("ready", () => {
             }
     
             for (const item of newItems) {
-                const tweetTime = item.isoDate || item.pubDate;
-    
                 const sentMessage = await channel.send(
                     `New tweet from ${feed.title}:\n${item.link}`
                 );
                 await sentMessage.react("🔔");
     
-                // 毎回更新（最後が最新になる）
-                latestTweetTime = tweetTime;
+                latestTime = new Date(item.isoDate || item.pubDate);
             }
         } catch (error) {
             console.error(error);
