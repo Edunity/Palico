@@ -10,7 +10,7 @@ const parser = new RSSParser();
 const PORT = process.env.PORT || 3000;
 
 const RSS_URL = "https://rss.app/feeds/qmM60oCprvFwVxMS.xml";
-const CHANNEL_ID = "1447311397032825014";
+const CHANNEL_ID = "1447457660973617305";
 
 dotenv.config();
 
