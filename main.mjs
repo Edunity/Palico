@@ -39,47 +39,40 @@ client.once("ready", () => {
             const feed = await parser.parseURL(RSS_URL);
             const items = feed.items;
     
-            console.log(items.length + "tweets recieved.");
-    
-            if(items.length == 0) {
-                return;
-            }
-
-            items.sort((item1, item2) => new Date(item1.isoDate) - new Date(item2.isoDate));
-    
-            if (!latestTweetTime) {
-                const item = items[0];
-    
-                const channel = await client.channels.fetch(CHANNEL_ID);
-    
-                if(channel?.isTextBased()) {
-                    const sentMessage = await channel.send(`New tweet from ${feed.title}:\n${item.link}`);
-                    await sentMessage.react("🔔");
-    
-                    latestTweetTime = item.isoDate || item.pubDate;
-                }
-    
+            if (!items || items.length == 0) {
                 return;
             }
     
-            for (const item of items) {
+            const newItems = items.filter(item => {
+                const time = item.isoDate || item.pubDate;
+                
+                return (time && (!latestTweetTime || new Date(time) > new Date(latestTweetTime)));
+            });
+    
+            if (newItems.length == 0) {
+                return;
+            }
+    
+            newItems.sort((item1, item2) => new Date(item1.isoDate || item1.pubDate) - new Date(item2.isoDate || item2.pubDate));
+    
+            const channel = await client.channels.fetch(CHANNEL_ID);
+    
+            if (!channel?.isTextBased()) {
+                return;
+            }
+    
+            for (const item of newItems) {
                 const tweetTime = item.isoDate || item.pubDate;
     
-                if (!tweetTime || new Date(tweetTime) <= new Date(latestTweetTime)) {
-                    continue;
-                }
+                const sentMessage = await channel.send(
+                    `New tweet from ${feed.title}:\n${item.link}`
+                );
+                await sentMessage.react("🔔");
     
-                const channel = await client.channels.fetch(CHANNEL_ID);
-    
-                if (channel?.isTextBased()) {
-                    const sentMessage = await channel.send(`New tweet from ${feed.title}:\n${item.link}`);
-                    await sentMessage.react("🔔");
-    
-                    latestTweetTime = tweetTime;
-                }
+                // 毎回更新（最後が最新になる）
+                latestTweetTime = tweetTime;
             }
-        }
-        catch (error) {
+        } catch (error) {
             console.error(error);
         }
     });
@@ -89,12 +82,6 @@ client.on("messageCreate", async (message) => {
     try {
         if (message.author.bot) {
             return;
-        }
-        
-        if (message.content.toLowerCase().includes("mhn")) {
-            // await message.reply("mhn");
-    
-            // await message.react("🏓");
         }
     }
     catch (error) {
