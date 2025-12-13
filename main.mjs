@@ -39,14 +39,14 @@ client.once("ready", () => {
             const feed = await parser.parseURL(RSS_URL);
             const items = feed.items;
     
-            if (!items || items.length == 0) {
+            if (items.length == 0) {
                 return;
             }
     
             const newItems = items.filter(item => {
                 const time = item.isoDate || item.pubDate;
                 
-                return (time && new Date(time) > latestTime);
+                return new Date(time) > latestTime;
             });
     
             if (newItems.length == 0) {
