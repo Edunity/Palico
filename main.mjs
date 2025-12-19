@@ -5,7 +5,11 @@ import RSSParser from "rss-parser";
 import cron from "node-cron";
 
 const app = express();
-const parser = new RSSParser();
+const parser = new RSSParser({
+  headers: {
+    'User-Agent': 'Mozilla/5.0 (compatible; RSSReader/1.0)'
+  }
+});
 
 const PORT = process.env.PORT || 3000;
 
@@ -34,7 +38,7 @@ client.login(process.env.DISCORD_TOKEN).catch(error => {
 client.once("ready", () => {
     console.log("Woke up.");
 
-    cron.schedule("* * * * *", async () => {
+    cron.schedule("0 * * * *", async () => {
         try {
             const feed = await parser.parseURL(RSS_URL);
             const items = feed.items;
